@@ -4,6 +4,18 @@
 
 ドメイン登録情報とSSL証明書監視機能を提供するMCPサーバーです。
 
+## クイックスタート
+
+この MCP サーバーを Claude Desktop に追加：
+
+```bash
+# NPXを使用（推奨）
+claude mcp add sslmon -- npx -y sslmon-mcp
+
+# またはGitHubを使用
+claude mcp add sslmon github://firesh/sslmon-mcp
+```
+
 ## 機能
 
 1. **ドメイン登録情報** - WHOIS検索によるドメイン登録・有効期限日取得

@@ -1,8 +1,9 @@
 {
   "name": "sslmon-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for domain registration info and SSL certificate monitoring",
   "main": "dist/index.js",
+  "bin": "dist/index.js",
   "type": "module",
   "keywords": ["mcp", "ssl", "certificate", "domain", "whois", "monitoring", "model-context-protocol"],
   "author": "firesh",

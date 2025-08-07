@@ -4,6 +4,18 @@
 
 一个提供域名注册信息和 SSL 证书监控功能的 MCP 服务器。
 
+## 快速开始
+
+将此 MCP 服务器添加到 Claude Desktop：
+
+```bash
+# 使用 NPX（推荐）
+claude mcp add sslmon -- npx -y sslmon-mcp
+
+# 或者使用 GitHub
+claude mcp add sslmon github://firesh/sslmon-mcp
+```
+
 ## 功能特性
 
 1. **域名注册信息** - 通过 WHOIS 查询获取域名注册和到期日期

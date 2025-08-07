@@ -21,7 +21,9 @@ npm run build
 # Run production server
 npm start
 ```
-
+## Package
+- github: https://github.com/firesh/sslmon-mcp
+- npm: https://www.npmjs.com/package/sslmon-mcp
 ## Architecture
 
 The project follows a single-class architecture with the main `SSLMonitorMCP` class in `src/index.ts`:

@@ -4,6 +4,18 @@
 
 An MCP server that provides domain registration information and SSL certificate monitoring capabilities.
 
+## Quick Start
+
+Add this MCP server to Claude Desktop:
+
+```bash
+# Using NPX (recommended)
+claude mcp add sslmon -- npx -y sslmon-mcp
+
+# Or using GitHub
+claude mcp add sslmon github://firesh/sslmon-mcp
+```
+
 ## Features
 
 1. **Domain Registration Info** - Get domain registration and expiration dates via WHOIS lookup
