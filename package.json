@@ -1,0 +1,26 @@
+{
+  "name": "sslmon-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for domain registration info and SSL certificate monitoring",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "whois": "^2.13.5",
+    "node-forge": "^1.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/whois": "^2.13.3",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
