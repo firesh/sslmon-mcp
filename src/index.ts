@@ -37,7 +37,7 @@ export class SSLMonitorMCP {
   constructor() {
     this.server = new Server({
       name: "sslmon-mcp",
-      version: "1.0.0",
+      version: "1.0.1",
     });
 
     this.setupToolHandlers();
@@ -523,8 +523,3 @@ export class SSLMonitorMCP {
   }
 }
 
-// Only run the server if this file is executed directly (not imported)
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = new SSLMonitorMCP();
-  server.run().catch(console.error);
-}
