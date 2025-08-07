@@ -22,10 +22,11 @@
 - `registrationDate`: 域名注册日期
 - `expirationDate`: 域名到期日期
 - `registrar`: 域名注册商名称
+- `registrant`: 域名注册人信息（获取到时返回）
 - `status`: 域名状态
 
-### check_ssl_certificate
-检查域名的 SSL 证书有效期。
+### get_ssl_cert_info
+SSL证书信息查询
 
 **参数：**
 - `domain` (字符串，必需): 要检查 SSL 证书的域名
@@ -68,5 +69,5 @@ npm run dev
 await mcp.callTool("get_domain_info", { domain: "google.com" });
 
 // 检查 SSL 证书
-await mcp.callTool("check_ssl_certificate", { domain: "google.com" });
+await mcp.callTool("get_ssl_cert_info", { domain: "google.com" });
 ```

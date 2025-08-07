@@ -22,10 +22,11 @@ Get domain registration and expiration information using WHOIS lookup.
 - `registrationDate`: Domain registration date
 - `expirationDate`: Domain expiration date
 - `registrar`: Domain registrar name
+- `registrant`: Domain registrant information (when available)
 - `status`: Domain status
 
-### check_ssl_certificate
-Check SSL certificate validity period for a domain.
+### get_ssl_cert_info
+SSL证书信息查询
 
 **Parameters:**
 - `domain` (string, required): The domain to check SSL certificate for
@@ -68,5 +69,5 @@ Once configured in your MCP client:
 await mcp.callTool("get_domain_info", { domain: "google.com" });
 
 // Check SSL certificate
-await mcp.callTool("check_ssl_certificate", { domain: "google.com" });
+await mcp.callTool("get_ssl_cert_info", { domain: "google.com" });
 ```

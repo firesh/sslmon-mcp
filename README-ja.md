@@ -22,10 +22,11 @@ WHOIS検索によりドメイン登録・有効期限情報を取得します。
 - `registrationDate`: ドメイン登録日
 - `expirationDate`: ドメイン有効期限日
 - `registrar`: ドメイン登録業者名
+- `registrant`: ドメイン登録者情報（取得可能な場合）
 - `status`: ドメインステータス
 
-### check_ssl_certificate
-ドメインのSSL証明書有効期間をチェックします。
+### get_ssl_cert_info
+SSL証明書情報查詢
 
 **パラメータ:**
 - `domain` (文字列、必須): SSL証明書をチェックするドメイン
@@ -68,5 +69,5 @@ MCPクライアントで設定後：
 await mcp.callTool("get_domain_info", { domain: "google.com" });
 
 // SSL証明書をチェック
-await mcp.callTool("check_ssl_certificate", { domain: "google.com" });
+await mcp.callTool("get_ssl_cert_info", { domain: "google.com" });
 ```

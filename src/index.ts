@@ -6,9 +6,10 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import whois from 'whois';
 import * as tls from 'tls';
 import * as https from 'https';
+import * as http from 'http';
+import * as net from 'net';
 import { URL } from 'url';
 
 interface DomainInfo {
@@ -16,6 +17,7 @@ interface DomainInfo {
   registrationDate?: string;
   expirationDate?: string;
   registrar?: string;
+  registrant?: string;
   status?: string;
 }
 
@@ -29,21 +31,14 @@ interface SSLInfo {
   daysUntilExpiry: number;
 }
 
-class SSLMonitorMCP {
+export class SSLMonitorMCP {
   private server: Server;
 
   constructor() {
-    this.server = new Server(
-      {
-        name: "sslmon-mcp",
-        version: "1.0.0",
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
-      }
-    );
+    this.server = new Server({
+      name: "sslmon-mcp",
+      version: "1.0.0",
+    });
 
     this.setupToolHandlers();
   }
@@ -54,27 +49,27 @@ class SSLMonitorMCP {
         tools: [
           {
             name: "get_domain_info",
-            description: "Get domain registration and expiration information using WHOIS lookup",
+            description: "Get domain registration and expiration information using WHOIS lookup. Returns registrant information when available.",
             inputSchema: {
               type: "object",
               properties: {
                 domain: {
                   type: "string",
-                  description: "The top-level domain to check (e.g., example.com)",
+                  description: "The top-level domain to check (e.g., sslmon.dev)",
                 },
               },
               required: ["domain"],
             },
           },
           {
-            name: "check_ssl_certificate",
-            description: "Check SSL certificate validity period for a domain",
+            name: "get_ssl_cert_info",
+            description: "Get SSL certificate information",
             inputSchema: {
               type: "object",
               properties: {
                 domain: {
                   type: "string", 
-                  description: "The domain to check SSL certificate for (e.g., example.com)",
+                  description: "The domain to check SSL certificate for (e.g., www.sslmon.dev)",
                 },
                 port: {
                   type: "number",
@@ -93,10 +88,14 @@ class SSLMonitorMCP {
       const { name, arguments: args } = request.params;
 
       try {
+        if (!args) {
+          throw new Error("Missing arguments");
+        }
+        
         switch (name) {
           case "get_domain_info":
             return await this.getDomainInfo(args.domain as string);
-          case "check_ssl_certificate":
+          case "get_ssl_cert_info":
             return await this.checkSSLCertificate(
               args.domain as string,
               (args.port as number) || 443
@@ -118,60 +117,227 @@ class SSLMonitorMCP {
   }
 
   private async getDomainInfo(domain: string): Promise<any> {
-    return new Promise((resolve) => {
-      whois.lookup(domain, (err: Error | null, data: string) => {
-        if (err) {
-          resolve({
-            content: [
-              {
-                type: "text",
-                text: `WHOIS lookup failed for ${domain}: ${err.message}`,
-              },
-            ],
-          });
-          return;
-        }
-
-        const domainInfo = this.parseWhoisData(data, domain);
-        
-        resolve({
+    try {
+      // First try RDAP protocol
+      const rdapInfo = await this.queryRDAP(domain);
+      if (rdapInfo) {
+        return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(domainInfo, null, 2),
+              text: JSON.stringify(rdapInfo, null, 2),
             },
           ],
-        });
+        };
+      }
+    } catch (rdapError) {
+      console.error(`RDAP query failed for ${domain}:`, rdapError);
+    }
+
+    try {
+      // Fallback to whois protocol
+      const whoisInfo = await this.queryWhois(domain);
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(whoisInfo, null, 2),
+          },
+        ],
+      };
+    } catch (whoisError) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Domain info lookup failed for ${domain}: ${whoisError instanceof Error ? whoisError.message : String(whoisError)}`,
+          },
+        ],
+      };
+    }
+  }
+
+  async queryRDAP(domain: string): Promise<DomainInfo | null> {
+    const tld = domain.split('.').pop()?.toLowerCase();
+    if (!tld) {
+      throw new Error('Invalid domain format');
+    }
+
+    // Get RDAP bootstrap data to find the right RDAP server
+    let rdapServer = await this.getRDAPServer(tld);
+    if (!rdapServer) {
+      return null;
+    }
+    if (!rdapServer.endsWith('/')) {
+      rdapServer = rdapServer+'/';
+    }
+
+    const url = `${rdapServer}domain/${domain}`;
+    console.log(`Querying RDAP server: ${url}`);
+    const response = await this.httpRequest(url);
+    const data = JSON.parse(response);
+
+    return this.parseRDAPData(data, domain);
+  }
+
+  async getRDAPServer(tld: string): Promise<string | null> {
+    try {
+      const bootstrapUrl = 'https://data.iana.org/rdap/dns.json';
+      const response = await this.httpRequest(bootstrapUrl);
+      const bootstrap = JSON.parse(response);
+      
+      for (const service of bootstrap.services) {
+        const [tlds, servers] = service;
+        if (tlds.includes(tld) && servers.length > 0) {
+          return servers[0];
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get RDAP bootstrap data:', error);
+    }
+    return null;
+  }
+
+  parseRDAPData(data: any, domain: string): DomainInfo {
+    const info: DomainInfo = { domain };
+
+    if (data.events) {
+      for (const event of data.events) {
+        if (event.eventAction === 'registration' && event.eventDate) {
+          info.registrationDate = event.eventDate;
+        }
+        if (event.eventAction === 'expiration' && event.eventDate) {
+          info.expirationDate = event.eventDate;
+        }
+      }
+    }
+
+    if (data.entities) {
+      for (const entity of data.entities) {
+        if (entity.roles && entity.vcardArray) {
+          const vcard = entity.vcardArray[1];
+          let entityName = '';
+          
+          for (const field of vcard) {
+            if (field[0] === 'fn' && field[3]) {
+              entityName = field[3];
+              break;
+            }
+          }
+          
+          if (entity.roles.includes('registrar') && entityName) {
+            info.registrar = entityName;
+          }
+          if (entity.roles.includes('registrant') && entityName) {
+            info.registrant = entityName;
+          }
+        }
+      }
+    }
+
+    if (data.status && data.status.length > 0) {
+      info.status = data.status.join(', ');
+    }
+
+    return info;
+  }
+
+  async queryWhois(domain: string): Promise<DomainInfo> {
+    const tld = domain.split('.').pop()?.toLowerCase();
+    if (!tld) {
+      throw new Error('Invalid domain format');
+    }
+
+    // Get whois server for the TLD
+    const whoisServer = await this.getWhoisServer(tld);
+    if (!whoisServer) {
+      throw new Error(`No whois server found for TLD: ${tld}`);
+    }
+
+    const whoisData = await this.performWhoisQuery(domain, whoisServer);
+    return this.parseWhoisData(whoisData, domain);
+  }
+
+  async getWhoisServer(tld: string): Promise<string | null> {
+    try {
+      const ianaWhoisData = await this.performWhoisQuery(tld, 'whois.iana.org');
+      const lines = ianaWhoisData.split('\n');
+      for (const line of lines) {
+        const lower = line.toLowerCase().trim();
+        if (lower.startsWith('whois:')) {
+          return line.split(':')[1]?.trim() || null;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get whois server from IANA:', error);
+    }
+    return null;
+  }
+
+  async performWhoisQuery(query: string, server: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const socket = net.connect(43, server);
+      let data = '';
+
+      socket.on('connect', () => {
+        socket.write(query + '\r\n');
+      });
+
+      socket.on('data', (chunk) => {
+        data += chunk.toString();
+      });
+
+      socket.on('end', () => {
+        resolve(data);
+      });
+
+      socket.on('error', (error) => {
+        reject(error);
+      });
+
+      socket.setTimeout(10000, () => {
+        socket.destroy();
+        reject(new Error('Whois query timeout'));
       });
     });
   }
 
-  private parseWhoisData(data: string, domain: string): DomainInfo {
+  parseWhoisData(data: string, domain: string): DomainInfo {
     const lines = data.split('\n');
     const info: DomainInfo = { domain };
 
     for (const line of lines) {
       const lower = line.toLowerCase().trim();
       
-      // Registration date patterns
-      if (lower.includes('creation date') || lower.includes('created') || lower.includes('registered')) {
-        const dateMatch = line.match(/(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}-\w{3}-\d{4})/i);
+      // Registration date patterns (English and Chinese)
+      if (lower.includes('creation date') || lower.includes('created') || lower.includes('registered') || 
+          lower.includes('registration time') || line.includes('Registration Time:')) {
+        const dateMatch = line.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}|\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}-\w{3}-\d{4}|\d{4}-\d{2}-\d{2}T[\d:]+Z?)/i);
         if (dateMatch && !info.registrationDate) {
-          info.registrationDate = dateMatch[1];
+          info.registrationDate = this.normalizeToISO8601(dateMatch[1]);
         }
       }
       
-      // Expiration date patterns
-      if (lower.includes('expiry date') || lower.includes('expiration') || lower.includes('expires')) {
-        const dateMatch = line.match(/(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}-\w{3}-\d{4})/i);
+      // Expiration date patterns (English and Chinese)
+      if (lower.includes('expiry date') || lower.includes('expiration') || lower.includes('expires') ||
+          lower.includes('expiration time') || line.includes('Expiration Time:')) {
+        const dateMatch = line.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}|\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}-\w{3}-\d{4}|\d{4}-\d{2}-\d{2}T[\d:]+Z?)/i);
         if (dateMatch && !info.expirationDate) {
-          info.expirationDate = dateMatch[1];
+          info.expirationDate = this.normalizeToISO8601(dateMatch[1]);
         }
       }
       
-      // Registrar
-      if (lower.includes('registrar:') && !info.registrar) {
+      // Registrar (English and Chinese)
+      if ((lower.includes('registrar:') || lower.includes('sponsoring registrar:') || 
+           line.includes('Sponsoring Registrar:')) && !info.registrar) {
         info.registrar = line.split(':')[1]?.trim();
+      }
+      
+      // Registrant patterns (English and Chinese)
+      if ((lower.includes('registrant:') || lower.includes('registrant name:') || 
+           lower.includes('registrant organization:') || lower.includes('registrant contact:') ||
+           line.includes('Registrant:')) && !info.registrant) {
+        info.registrant = line.split(':')[1]?.trim();
       }
       
       // Status
@@ -181,6 +347,45 @@ class SSLMonitorMCP {
     }
 
     return info;
+  }
+
+  async httpRequest(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const urlObj = new URL(url);
+      const options = {
+        hostname: urlObj.hostname,
+        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+        path: urlObj.pathname + urlObj.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'sslmon-mcp/1.0.0'
+        }
+      };
+
+      const request = (urlObj.protocol === 'https:' ? https : http).request(options, (response: any) => {
+        let data = '';
+        
+        response.on('data', (chunk: any) => {
+          data += chunk;
+        });
+        
+        response.on('end', () => {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            resolve(data);
+          } else {
+            reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
+          }
+        });
+      });
+
+      request.on('error', reject);
+      request.setTimeout(10000, () => {
+        request.destroy();
+        reject(new Error('HTTP request timeout'));
+      });
+      
+      request.end();
+    });
   }
 
   private async checkSSLCertificate(domain: string, port: number = 443): Promise<any> {
@@ -260,6 +465,57 @@ class SSLMonitorMCP {
     });
   }
 
+  normalizeToISO8601(dateString: string): string {
+    // Clean up the date string
+    const cleanDate = dateString.trim();
+    
+    // If already in ISO format, return as-is
+    if (cleanDate.includes('T') || cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const date = new Date(cleanDate);
+      return date.toISOString();
+    }
+    
+    // Handle YYYY-MM-DD HH:mm:ss format (common in Chinese whois)
+    if (cleanDate.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/)) {
+      const date = new Date(cleanDate.replace(' ', 'T') + 'Z');
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+    
+    // Handle DD/MM/YYYY format
+    if (cleanDate.includes('/')) {
+      const parts = cleanDate.split('/');
+      if (parts.length === 3) {
+        // Assume MM/DD/YYYY or DD/MM/YYYY - try both
+        let date = new Date(`${parts[2]}-${parts[0]}-${parts[1]}`);
+        if (isNaN(date.getTime())) {
+          date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        }
+        if (!isNaN(date.getTime())) {
+          return date.toISOString();
+        }
+      }
+    }
+    
+    // Handle DD-MMM-YYYY format (e.g., 15-Sep-1997)
+    if (cleanDate.includes('-') && cleanDate.match(/\d{2}-\w{3}-\d{4}/)) {
+      const date = new Date(cleanDate);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+    
+    // Default: try to parse as-is
+    const date = new Date(cleanDate);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+    
+    // If all else fails, return original string
+    return cleanDate;
+  }
+
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
@@ -267,5 +523,8 @@ class SSLMonitorMCP {
   }
 }
 
-const server = new SSLMonitorMCP();
-server.run().catch(console.error);
+// Only run the server if this file is executed directly (not imported)
+if (import.meta.url === `file://${process.argv[1]}`) {
+  const server = new SSLMonitorMCP();
+  server.run().catch(console.error);
+}
