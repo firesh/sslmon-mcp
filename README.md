@@ -1,28 +1,46 @@
-# SSL Monitor MCP Server
+# Domain/HTTPS/SSL MCP Server
+
+[![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-MCP-blue)](https://modelcontextprotocol.io/) [![npm version](https://img.shields.io/npm/v/sslmon-mcp.svg)](https://www.npmjs.com/package/sslmon-mcp) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
 **Languages:** [English](README.md) | [中文](README-zh.md) | [日本語](README-ja.md)
 
-An MCP server that provides domain registration information and SSL certificate monitoring capabilities.
+A Model Context Protocol (MCP) server that provides domain registration information and SSL certificate monitoring capabilities. Perfect for security monitoring, domain management, and certificate lifecycle tracking.
 
-## Quick Start
+## 🚀 Quick Start
 
-Add this MCP server to Claude Desktop:
-
+### NPX (Recommended)
+Mac/Linux:
 ```bash
-# Using NPX (recommended)
+# Add to Claude Desktop
 claude mcp add sslmon -- npx -y sslmon-mcp
-
+```
+Windows:
+```bash
+# Add to Claude Desktop
+claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
+```
+### Configuration
+```
+{
+  "mcpServers": {
+    "shared-server": {
+      "command": "npx",
+      "args": ["-y", "sslmon-mcp"],
+      "env": {}
+    }
+  }
+}
 ```
 
-## Features
+## ✨ Features
 
-1. **Domain Registration Info** - Get domain registration and expiration dates via WHOIS lookup
-2. **SSL Certificate Monitoring** - Check SSL certificate validity periods and details
+- 🔍 **Domain Registration Info** - Get domain registration and expiration dates
+- 🔒 **SSL Certificate Info** - Check SSL certificate validity periods and details  
 
-## Tools
+## 🛠️ Available Tools
 
-### get_domain_info
-Get domain registration and expiration information using WHOIS lookup.
+### `get_domain_info`
+Get domain registration and expiration information.
 
 **Parameters:**
 - `domain` (string, required): The top-level domain to check (e.g., "example.com")
@@ -35,8 +53,8 @@ Get domain registration and expiration information using WHOIS lookup.
 - `registrant`: Domain registrant information (when available)
 - `status`: Domain status
 
-### get_ssl_cert_info
-SSL Certificate information query
+### `get_ssl_cert_info`
+Get SSL certificate information and validity status for any domain.
 
 **Parameters:**
 - `domain` (string, required): The domain to check SSL certificate for
@@ -50,34 +68,3 @@ SSL Certificate information query
 - `subject`: Certificate subject
 - `isValid`: Boolean indicating if certificate is currently valid
 - `daysUntilExpiry`: Number of days until certificate expires
-
-## Installation
-
-```bash
-npm install
-npm run build
-```
-
-## Usage
-
-```bash
-npm start
-```
-
-## Development
-
-```bash
-npm run dev
-```
-
-## Example Usage
-
-Once configured in your MCP client:
-
-```javascript
-// Check domain registration info
-await mcp.callTool("get_domain_info", { domain: "google.com" });
-
-// Check SSL certificate
-await mcp.callTool("get_ssl_cert_info", { domain: "google.com" });
-```
