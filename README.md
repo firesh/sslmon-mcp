@@ -12,8 +12,6 @@ Add this MCP server to Claude Desktop:
 # Using NPX (recommended)
 claude mcp add sslmon -- npx -y sslmon-mcp
 
-# Or using GitHub
-claude mcp add sslmon github://firesh/sslmon-mcp
 ```
 
 ## Features
@@ -38,7 +36,7 @@ Get domain registration and expiration information using WHOIS lookup.
 - `status`: Domain status
 
 ### get_ssl_cert_info
-SSL证书信息查询
+SSL Certificate information query
 
 **Parameters:**
 - `domain` (string, required): The domain to check SSL certificate for

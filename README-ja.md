@@ -12,8 +12,6 @@
 # NPXを使用（推奨）
 claude mcp add sslmon -- npx -y sslmon-mcp
 
-# またはGitHubを使用
-claude mcp add sslmon github://firesh/sslmon-mcp
 ```
 
 ## 機能
