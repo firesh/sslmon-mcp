@@ -8,7 +8,11 @@ A Model Context Protocol (MCP) server that provides domain registration informat
 
 ## 🚀 Quick Start
 
-### NPX (Recommended)
+### HTTP (Remote MCP server)
+Name: `sslmon`
+URL: `https://sslmon.dev/mcp`
+
+### NPX (Local MCP server)
 Mac/Linux:
 ```bash
 # Add to Claude Desktop
@@ -19,7 +23,7 @@ Windows:
 # Add to Claude Desktop
 claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
 ```
-### Configuration
+### Configuration (Local MCP server)
 ```JSON
 {
   "mcpServers": {

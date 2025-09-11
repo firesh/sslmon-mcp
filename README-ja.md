@@ -9,7 +9,11 @@
 
 ## 🚀 クイックスタート
 
-### NPX（推奨）
+### HTTP（リモート MCP サーバー）
+名前: `sslmon`
+URL: `https://sslmon.dev/mcp`
+
+### NPX（ローカル MCP サーバー）
 Mac/Linux:
 ```bash
 # Claude Desktop に追加
@@ -20,17 +24,22 @@ Windows:
 # Claude Desktop に追加
 claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
 ```
-### 設定
-```
+### 設定（ローカル MCP サーバー）
+```json
 {
   "mcpServers": {
-    "shared-server": {
+    "sslmon": {
       "command": "npx",
       "args": ["-y", "sslmon-mcp"],
       "env": {}
     }
   }
 }
+```
+```toml
+[mcp_servers.sslmon]
+command = "npx"
+args = ["-y", "sslmon-mcp"]
 ```
 
 ## ✨ 機能

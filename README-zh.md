@@ -9,7 +9,11 @@
 
 ## 🚀 快速开始
 
-### NPX（推荐）
+### HTTP（远程 MCP 服务器）
+名称: `sslmon`
+URL: `https://sslmon.dev/mcp`
+
+### NPX（本地 MCP 服务器）
 Mac/Linux:
 ```bash
 # 添加到 Claude Desktop
@@ -20,17 +24,22 @@ Windows:
 # 添加到 Claude Desktop
 claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
 ```
-### 配置
-```
+### 配置（本地 MCP 服务器）
+```json
 {
   "mcpServers": {
-    "shared-server": {
+    "sslmon": {
       "command": "npx",
       "args": ["-y", "sslmon-mcp"],
       "env": {}
     }
   }
 }
+```
+```toml
+[mcp_servers.sslmon]
+command = "npx"
+args = ["-y", "sslmon-mcp"]
 ```
 
 ## ✨ 功能特性
