@@ -18,6 +18,7 @@ interface DomainInfo {
   registrar?: string;
   registrant?: string;
   status?: string;
+  daysUntilExpiry?: number;
 }
 
 interface SSLInfo {
@@ -56,7 +57,7 @@ export class SSLMonitorMCP {
       "get_domain_info",
       {
         title: "Get domain info",
-        description: "Get domain registration and expiration information using WHOIS and RDAP.",
+        description: "Get domain registration, expiration, and daysUntilExpiry using WHOIS/RDAP.",
         inputSchema: {
           domain: z.string().describe("The top-level domain to check (e.g., sslmon.dev)"),
         },
@@ -219,6 +220,15 @@ export class SSLMonitorMCP {
       info.status = data.status.join(', ');
     }
 
+    // Calculate days until expiry if expirationDate is available
+    if (info.expirationDate) {
+      const now = new Date();
+      const exp = new Date(info.expirationDate);
+      if (!isNaN(exp.getTime())) {
+        info.daysUntilExpiry = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      }
+    }
+
     return info;
   }
 
@@ -323,6 +333,15 @@ export class SSLMonitorMCP {
       // Status
       if (lower.includes('status:') && !info.status) {
         info.status = line.split(':')[1]?.trim();
+      }
+    }
+
+    // Calculate days until expiry if expirationDate is available
+    if (info.expirationDate) {
+      const now = new Date();
+      const exp = new Date(info.expirationDate);
+      if (!isNaN(exp.getTime())) {
+        info.daysUntilExpiry = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
     }
 

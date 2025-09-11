@@ -57,6 +57,7 @@ Get domain registration and expiration information.
 - `registrar`: Domain registrar name
 - `registrant`: Domain registrant information (when available)
 - `status`: Domain status
+- `daysUntilExpiry`: Number of days until domain expires
 
 ### `get_ssl_cert_info`
 Get SSL certificate information and validity status for any domain.

@@ -53,6 +53,7 @@ claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
 - `registrar`: ドメイン登録業者名
 - `registrant`: ドメイン登録者情報（取得可能な場合）
 - `status`: ドメインステータス
+- `daysUntilExpiry`: ドメインの有効期限までの日数
 
 ### `get_ssl_cert_info`
 SSL証明書情報と有効性ステータスを取得します。

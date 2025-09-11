@@ -53,6 +53,7 @@ claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
 - `registrar`: 域名注册商名称
 - `registrant`: 域名注册人信息（获取到时返回）
 - `status`: 域名状态
+- `daysUntilExpiry`: 域名到期剩余天数
 
 ### `get_ssl_cert_info`
 获取 SSL 证书信息和有效状态。
