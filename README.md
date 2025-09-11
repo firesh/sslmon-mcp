@@ -20,16 +20,21 @@ Windows:
 claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
 ```
 ### Configuration
-```
+```JSON
 {
   "mcpServers": {
-    "shared-server": {
+    "sslmon": {
       "command": "npx",
       "args": ["-y", "sslmon-mcp"],
       "env": {}
     }
   }
 }
+```
+```toml
+[mcp_servers.sslmon]
+command = "npx"
+args = ["-y", "sslmon-mcp"]
 ```
 
 ## ✨ Features
