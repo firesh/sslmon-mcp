@@ -4,7 +4,12 @@ This guide provides step-by-step instructions for AI agents like Cline to instal
 
 ## Quick Installation
 
-### Using NPX (Recommended)
+### Using Remote HTTP MCP Server
+
+- Name: `sslmon`
+- URL: `https://sslmon.dev/mcp`
+
+### Using NPX (Local, Recommended)
 
 1. **For Claude Desktop on Mac/Linux:**
    ```bash
@@ -16,7 +21,7 @@ This guide provides step-by-step instructions for AI agents like Cline to instal
    claude mcp add sslmon -- cmd /c npx -y sslmon-mcp
    ```
 
-### Manual Configuration
+### Manual Configuration (Local MCP server)
 
 If the above commands don't work, manually add this configuration to your MCP settings file:
 
@@ -30,6 +35,12 @@ If the above commands don't work, manually add this configuration to your MCP se
     }
   }
 }
+```
+
+```toml
+[mcp_servers.sslmon]
+command = "npx"
+args = ["-y", "sslmon-mcp"]
 ```
 
 ## Verification
