@@ -37,7 +37,7 @@ export class SSLMonitorMCP {
   constructor() {
     this.server = new McpServer({
       name: "sslmon-mcp",
-      version: "1.0.1",
+      version: "1.0.4",
     });
 
     this.setupTools(this.server);
@@ -46,7 +46,7 @@ export class SSLMonitorMCP {
   private newServer(): McpServer {
     const server = new McpServer({
       name: "sslmon-mcp",
-      version: "1.0.1",
+      version: "1.0.4",
     });
     this.setupTools(server);
     return server;

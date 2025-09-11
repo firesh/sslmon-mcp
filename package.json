@@ -1,6 +1,6 @@
 {
   "name": "sslmon-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "MCP server for domain registration info and SSL certificate monitoring",
   "main": "dist/index.js",
   "bin": "dist/run.js",
