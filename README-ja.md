@@ -10,8 +10,8 @@
 ## 🚀 クイックスタート
 
 ### HTTP（リモート MCP サーバー）
-名前: `sslmon`
-URL: `https://sslmon.dev/mcp`
+**名前:** `sslmon`
+**URL:** `https://sslmon.dev/mcp`
 
 ### NPX（ローカル MCP サーバー）
 Mac/Linux:

@@ -9,8 +9,8 @@ A Model Context Protocol (MCP) server that provides domain registration informat
 ## 🚀 Quick Start
 
 ### HTTP (Remote MCP server)
-Name: `sslmon`
-URL: `https://sslmon.dev/mcp`
+**Name:** `sslmon`
+**URL:** `https://sslmon.dev/mcp`
 
 ### NPX (Local MCP server)
 Mac/Linux:

@@ -10,8 +10,8 @@
 ## 🚀 快速开始
 
 ### HTTP（远程 MCP 服务器）
-名称: `sslmon`
-URL: `https://sslmon.dev/mcp`
+**名称:** `sslmon`
+**URL:** `https://sslmon.dev/mcp`
 
 ### NPX（本地 MCP 服务器）
 Mac/Linux:
