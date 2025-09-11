@@ -5,7 +5,15 @@
   "main": "dist/index.js",
   "bin": "dist/run.js",
   "type": "module",
-  "keywords": ["mcp", "ssl", "certificate", "domain", "whois", "monitoring", "model-context-protocol"],
+  "keywords": [
+    "mcp",
+    "ssl",
+    "certificate",
+    "domain",
+    "whois",
+    "monitoring",
+    "model-context-protocol"
+  ],
   "author": "firesh",
   "license": "MIT",
   "repository": {
@@ -29,7 +37,9 @@
     "test:dev": "tsx --test src/tests/*.test.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.4.0",
+    "@modelcontextprotocol/sdk": "1.17.5",
+    "@types/express": "5.0.3",
+    "express": "5.1.0",
     "node-forge": "^1.3.1"
   },
   "devDependencies": {

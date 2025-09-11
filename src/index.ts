@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { z } from 'zod';
 import * as tls from 'tls';
 import * as https from 'https';
 import * as http from 'http';
 import * as net from 'net';
 import { URL } from 'url';
+import express, { Request, Response } from 'express';
 
 interface DomainInfo {
   domain: string;
@@ -32,88 +31,69 @@ interface SSLInfo {
 }
 
 export class SSLMonitorMCP {
-  private server: Server;
+  private server: McpServer;
 
   constructor() {
-    this.server = new Server({
+    this.server = new McpServer({
       name: "sslmon-mcp",
       version: "1.0.1",
     });
 
-    this.setupToolHandlers();
+    this.setupTools(this.server);
   }
 
-  private setupToolHandlers() {
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
-        tools: [
-          {
-            name: "get_domain_info",
-            description: "Get domain registration and expiration information using WHOIS lookup. Returns registrant information when available.",
-            inputSchema: {
-              type: "object",
-              properties: {
-                domain: {
-                  type: "string",
-                  description: "The top-level domain to check (e.g., sslmon.dev)",
-                },
-              },
-              required: ["domain"],
-            },
-          },
-          {
-            name: "get_ssl_cert_info",
-            description: "Get SSL certificate information",
-            inputSchema: {
-              type: "object",
-              properties: {
-                domain: {
-                  type: "string", 
-                  description: "The domain to check SSL certificate for (e.g., www.sslmon.dev)",
-                },
-                port: {
-                  type: "number",
-                  description: "Port number to check (default: 443)",
-                  default: 443,
-                },
-              },
-              required: ["domain"],
-            },
-          },
-        ],
-      };
+  private newServer(): McpServer {
+    const server = new McpServer({
+      name: "sslmon-mcp",
+      version: "1.0.1",
     });
+    this.setupTools(server);
+    return server;
+  }
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
-
-      try {
-        if (!args) {
-          throw new Error("Missing arguments");
+  private setupTools(server: McpServer) {
+    server.registerTool(
+      "get_domain_info",
+      {
+        title: "Get domain info",
+        description: "Get domain registration and expiration information using WHOIS and RDAP.",
+        inputSchema: {
+          domain: z.string().describe("The top-level domain to check (e.g., sslmon.dev)"),
+        },
+      },
+      async ({ domain }) => {
+        try {
+          return await this.getDomainInfo(domain);
+        } catch (error) {
+          return {
+            content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+            isError: true,
+          };
         }
-        
-        switch (name) {
-          case "get_domain_info":
-            return await this.getDomainInfo(args.domain as string);
-          case "get_ssl_cert_info":
-            return await this.checkSSLCertificate(
-              args.domain as string,
-              (args.port as number) || 443
-            );
-          default:
-            throw new Error(`Unknown tool: ${name}`);
-        }
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-        };
       }
-    });
+    );
+
+    server.registerTool(
+      "get_ssl_cert_info",
+      {
+        title: "Get SSL cert info",
+        description: "Get SSL certificate information for a host and port.",
+        inputSchema: {
+          domain: z.string().describe("The domain to check SSL certificate for (e.g., www.sslmon.dev)"),
+          port: z.number().int().positive().default(443).describe("Port number to check (default: 443)"),
+        },
+      },
+      async ({ domain, port = 443 }) => {
+        try {
+          return await this.checkSSLCertificate(domain, port);
+        } catch (error) {
+          return {
+            content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+            isError: true,
+          };
+        }
+      }
+    );
   }
 
   private async getDomainInfo(domain: string): Promise<any> {
@@ -521,5 +501,63 @@ export class SSLMonitorMCP {
     await this.server.connect(transport);
     console.error("SSL Monitor MCP server running on stdio");
   }
-}
 
+  async runHttp(port: number) {
+    const app = express();
+    app.use(express.json());
+
+    app.post('/mcp', async (req: Request, res: Response) => {
+      try {
+        const server = this.newServer();
+        const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined,
+          // enableDnsRebindingProtection: true,
+          // allowedHosts: ['127.0.0.1'],
+        });
+        res.on('close', () => {
+          transport.close();
+        });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        console.error('Error handling MCP request:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: { code: -32603, message: 'Internal server error' },
+            id: null,
+          });
+        }
+      }
+    });
+
+    app.get('/mcp', async (_req: Request, res: Response) => {
+      res
+        .status(405)
+        .json({
+          jsonrpc: '2.0',
+          error: { code: -32000, message: 'Method not allowed.' },
+          id: null,
+        });
+    });
+
+    app.delete('/mcp', async (_req: Request, res: Response) => {
+      res
+        .status(405)
+        .json({
+          jsonrpc: '2.0',
+          error: { code: -32000, message: 'Method not allowed.' },
+          id: null,
+        });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const server = app.listen(port, (err?: any) => {
+        if (err) return reject(err);
+        resolve();
+      });
+      server.on('error', reject);
+    });
+    console.log(`MCP Stateless Streamable HTTP Server listening on port ${port}`);
+  }
+}
