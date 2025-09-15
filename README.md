@@ -6,6 +6,10 @@
 
 A Model Context Protocol (MCP) server that provides domain registration information and SSL certificate monitoring capabilities. Perfect for security monitoring, domain management, and certificate lifecycle tracking.
 
+<a href="https://glama.ai/mcp/servers/@firesh/sslmon-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@firesh/sslmon-mcp/badge" alt="SSL Monitor Server MCP server" />
+</a>
+
 ## 🚀 Quick Start
 
 ### HTTP (Remote MCP server)
