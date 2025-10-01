@@ -10,8 +10,17 @@
 ## 🚀 クイックスタート
 
 ### HTTP（リモート MCP サーバー）
-**名前:** `sslmon`
-**URL:** `https://sslmon.dev/mcp`
+- **名前:** `sslmon`
+- **URL:** `https://sslmon.dev/mcp`
+
+```bash
+# Claude Code
+claude mcp add -t http sslmon https://sslmon.dev/mcp
+# Gemini CLI
+gemini mcp add -t http sslmon https://sslmon.dev/mcp
+# Qwen Code
+qwen mcp add -t http sslmon https://sslmon.dev/mcp
+```
 
 ### NPX（ローカル MCP サーバー）
 Mac/Linux:

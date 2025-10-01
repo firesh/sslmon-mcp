@@ -13,8 +13,9 @@ A Model Context Protocol (MCP) server that provides domain registration informat
 ## 🚀 Quick Start
 
 ### HTTP (Remote MCP server)
-**Name:** `sslmon`
-**URL:** `https://sslmon.dev/mcp`
+- **Name:** `sslmon`
+- **URL:** `https://sslmon.dev/mcp`
+
 ```bash
 # Claude Code
 claude mcp add -t http sslmon https://sslmon.dev/mcp

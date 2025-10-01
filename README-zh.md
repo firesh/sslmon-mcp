@@ -10,8 +10,17 @@
 ## 🚀 快速开始
 
 ### HTTP（远程 MCP 服务器）
-**名称:** `sslmon`
-**URL:** `https://sslmon.dev/mcp`
+- **名称:** `sslmon`
+- **URL:** `https://sslmon.dev/mcp`
+
+```bash
+# Claude Code
+claude mcp add -t http sslmon https://sslmon.dev/mcp
+# Gemini CLI
+gemini mcp add -t http sslmon https://sslmon.dev/mcp
+# Qwen Code
+qwen mcp add -t http sslmon https://sslmon.dev/mcp
+```
 
 ### NPX（本地 MCP 服务器）
 Mac/Linux:
