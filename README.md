@@ -15,6 +15,14 @@ A Model Context Protocol (MCP) server that provides domain registration informat
 ### HTTP (Remote MCP server)
 **Name:** `sslmon`
 **URL:** `https://sslmon.dev/mcp`
+```bash
+# Claude Code
+claude mcp add -t http sslmon https://sslmon.dev/mcp
+# Gemini CLI
+gemini mcp add -t http sslmon https://sslmon.dev/mcp
+# Qwen Code
+qwen mcp add -t http sslmon https://sslmon.dev/mcp
+```
 
 ### NPX (Local MCP server)
 Mac/Linux:
