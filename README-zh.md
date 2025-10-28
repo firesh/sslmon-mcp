@@ -20,6 +20,8 @@ claude mcp add -t http sslmon https://sslmon.dev/mcp
 gemini mcp add -t http sslmon https://sslmon.dev/mcp
 # Qwen Code
 qwen mcp add -t http sslmon https://sslmon.dev/mcp
+# Codex
+codex mcp add sslmon --url https://sslmon.dev/mcp
 ```
 
 ### NPX（本地 MCP 服务器）
