@@ -6,8 +6,8 @@ function parseArgs(argv: string[]) {
   const args: Record<string, string | boolean> = {};
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--protocal') {
-      args.protocal = String(argv[i + 1] || '');
+    if (arg === '--protocol') {
+      args.protocol = String(argv[i + 1] || '');
       i++;
       continue;
     }
@@ -23,11 +23,11 @@ function parseArgs(argv: string[]) {
 async function main() {
   const argv = process.argv.slice(2);
   const args = parseArgs(argv);
-  const protocal = (String(args.protocal || 'stdio')).toLowerCase();
+  const protocol = (String(args.protocol || 'stdio')).toLowerCase();
 
   const server = new SSLMonitorMCP();
 
-  if (protocal === 'http') {
+  if (protocol === 'http') {
     const portArg = typeof args.port === 'string' && args.port ? Number(args.port) : undefined;
     const port = Number(portArg || 3000);
     await server.runHttp(port);
