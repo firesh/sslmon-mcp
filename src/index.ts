@@ -265,28 +265,26 @@ export class SSLMonitorMCP {
   }
 
   async performWhoisQuery(query: string, server: string): Promise<string> {
+    const tunnel = await this.createProxyTunnel(server, 43);
     return new Promise((resolve, reject) => {
-      const socket = net.connect(43, server);
       let data = '';
 
-      socket.on('connect', () => {
-        socket.write(query + '\r\n');
-      });
+      tunnel.write(query + '\r\n');
 
-      socket.on('data', (chunk) => {
+      tunnel.on('data', (chunk) => {
         data += chunk.toString();
       });
 
-      socket.on('end', () => {
+      tunnel.on('end', () => {
         resolve(data);
       });
 
-      socket.on('error', (error) => {
+      tunnel.on('error', (error) => {
         reject(error);
       });
 
-      socket.setTimeout(10000, () => {
-        socket.destroy();
+      tunnel.setTimeout(15000, () => {
+        tunnel.destroy();
         reject(new Error('Whois query timeout'));
       });
     });
@@ -348,26 +346,71 @@ export class SSLMonitorMCP {
     return info;
   }
 
-  async httpRequest(url: string): Promise<string> {
+  private getProxyConfig(): { host: string, port: number, auth?: string } | null {
+    const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
+    if (!proxyUrl) return null;
+    try {
+      const url = new URL(proxyUrl);
+      const auth = url.username ? `${decodeURIComponent(url.username)}:${decodeURIComponent(url.password)}` : undefined;
+      return { host: url.hostname, port: parseInt(url.port) || 8080, auth };
+    } catch {
+      return null;
+    }
+  }
+
+  private createProxyTunnel(targetHost: string, targetPort: number): Promise<net.Socket> {
+    const proxy = this.getProxyConfig();
+    if (!proxy) {
+      return Promise.resolve(net.connect(targetPort, targetHost));
+    }
     return new Promise((resolve, reject) => {
-      const urlObj = new URL(url);
+      const socket = net.connect(proxy.port, proxy.host, () => {
+        const authHeader = proxy.auth
+          ? `Proxy-Authorization: Basic ${Buffer.from(proxy.auth).toString('base64')}\r\n`
+          : '';
+        socket.write(`CONNECT ${targetHost}:${targetPort} HTTP/1.1\r\nHost: ${targetHost}:${targetPort}\r\n${authHeader}\r\n`);
+        socket.once('data', (data) => {
+          const response = data.toString();
+          if (response.includes('200')) {
+            resolve(socket);
+          } else {
+            socket.destroy();
+            reject(new Error(`Proxy CONNECT failed: ${response.split('\n')[0].trim()}`));
+          }
+        });
+      });
+      socket.on('error', reject);
+      socket.setTimeout(15000, () => {
+        socket.destroy();
+        reject(new Error('Proxy connection timeout'));
+      });
+    });
+  }
+
+  async httpRequest(url: string): Promise<string> {
+    const urlObj = new URL(url);
+    const targetPort = parseInt(urlObj.port) || (urlObj.protocol === 'https:' ? 443 : 80);
+
+    const tunnel = await this.createProxyTunnel(urlObj.hostname, targetPort);
+
+    return new Promise((resolve, reject) => {
       const options = {
         hostname: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+        port: targetPort,
         path: urlObj.pathname + urlObj.search,
         method: 'GET',
-        headers: {
-          'User-Agent': 'sslmon-mcp/1.0.0'
-        }
+        headers: { 'User-Agent': 'sslmon-mcp/1.0.0' },
+        createConnection: () => {
+          if (urlObj.protocol === 'https:') {
+            return tls.connect({ socket: tunnel as any, servername: urlObj.hostname });
+          }
+          return tunnel;
+        },
       };
 
-      const request = (urlObj.protocol === 'https:' ? https : http).request(options, (response: any) => {
+      const req = (urlObj.protocol === 'https:' ? https : http).request(options, (response: any) => {
         let data = '';
-        
-        response.on('data', (chunk: any) => {
-          data += chunk;
-        });
-        
+        response.on('data', (chunk: any) => { data += chunk; });
         response.on('end', () => {
           if (response.statusCode >= 200 && response.statusCode < 300) {
             resolve(data);
@@ -377,25 +420,27 @@ export class SSLMonitorMCP {
         });
       });
 
-      request.on('error', reject);
-      request.setTimeout(10000, () => {
-        request.destroy();
+      req.on('error', reject);
+      req.setTimeout(15000, () => {
+        req.destroy();
         reject(new Error('HTTP request timeout'));
       });
-      
-      request.end();
+      req.end();
     });
   }
 
   private async checkSSLCertificate(domain: string, port: number = 443): Promise<any> {
-    return new Promise((resolve) => {
-      const options = {
-        host: domain,
-        port: port,
-        servername: domain,
+    let tunnel: net.Socket;
+    try {
+      tunnel = await this.createProxyTunnel(domain, port);
+    } catch (err) {
+      return {
+        content: [{ type: "text", text: `SSL connection failed for ${domain}:${port}: ${err instanceof Error ? err.message : String(err)}` }],
       };
+    }
 
-      const socket = tls.connect(options, () => {
+    return new Promise((resolve) => {
+      const socket = tls.connect({ socket: tunnel as any, servername: domain }, () => {
         const cert = socket.getPeerCertificate();
         
         if (!cert || Object.keys(cert).length === 0) {
