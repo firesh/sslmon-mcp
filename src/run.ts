@@ -23,11 +23,11 @@ function parseArgs(argv: string[]) {
 async function main() {
   const argv = process.argv.slice(2);
   const args = parseArgs(argv);
-  const protocal = (String(args.protocol || 'stdio')).toLowerCase();
+  const protocol = (String(args.protocol || 'stdio')).toLowerCase();
 
   const server = new SSLMonitorMCP();
 
-  if (protocal === 'http') {
+  if (protocol === 'http') {
     const portArg = typeof args.port === 'string' && args.port ? Number(args.port) : undefined;
     const port = Number(portArg || 3000);
     await server.runHttp(port);
