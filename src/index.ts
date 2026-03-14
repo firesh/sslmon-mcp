@@ -421,8 +421,8 @@ export class SSLMonitorMCP {
           domain,
           validFrom: validFrom.toISOString(),
           validTo: validTo.toISOString(),
-          issuer: cert.issuer?.CN || 'Unknown',
-          subject: cert.subject?.CN || domain,
+          issuer: (Array.isArray(cert.issuer?.CN) ? cert.issuer.CN[0] : cert.issuer?.CN) || 'Unknown',
+          subject: (Array.isArray(cert.subject?.CN) ? cert.subject.CN[0] : cert.subject?.CN) || domain,
           isValid,
           daysUntilExpiry,
         };
