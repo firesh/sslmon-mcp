@@ -90,3 +90,7 @@ SSL証明書情報と有効性ステータスを取得します。
 - `subject`: 証明書サブジェクト
 - `isValid`: 証明書が現在有効かどうかのブール値
 - `daysUntilExpiry`: 証明書期限切れまでの日数
+
+## 関連プロジェクト
+
+- [sslmon-cli](https://github.com/firesh/sslmon-cli) — ドメインWHOISとSSL証明書照会用のスタンドアロンCLIバイナリ（Go）、シェルスクリプトやCI/CDパイプラインに最適。

@@ -90,3 +90,7 @@ args = ["-y", "sslmon-mcp"]
 - `subject`: 证书主题
 - `isValid`: 布尔值，表示证书当前是否有效
 - `daysUntilExpiry`: 证书到期剩余天数
+
+## 相关项目
+
+- [sslmon-cli](https://github.com/firesh/sslmon-cli) — 独立的命令行工具（Go），适用于 Shell 脚本和 CI/CD 流水线中的域名 WHOIS 和 SSL 证书查询。

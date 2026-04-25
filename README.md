@@ -93,3 +93,7 @@ Get SSL certificate information and validity status for any domain.
 - `subject`: Certificate subject
 - `isValid`: Boolean indicating if certificate is currently valid
 - `daysUntilExpiry`: Number of days until certificate expires
+
+## Related Projects
+
+- [sslmon-cli](https://github.com/firesh/sslmon-cli) — Standalone CLI binary (Go) for domain WHOIS and SSL certificate queries, ideal for shell scripts and CI/CD pipelines.
