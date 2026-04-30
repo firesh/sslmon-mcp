@@ -1,6 +1,7 @@
 # Domain/HTTPS/SSL MCP Server
 
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-MCP-blue)](https://modelcontextprotocol.io/) [![npm version](https://img.shields.io/npm/v/sslmon-mcp.svg)](https://www.npmjs.com/package/sslmon-mcp) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![MCPAmpel Trust Score](https://mcpampel.com/badge/firesh/sslmon-mcp.svg)](https://mcpampel.com/repo/firesh/sslmon-mcp)
 
 **Languages:** [English](README.md) | [中文](README-zh.md) | [日本語](README-ja.md)
 
